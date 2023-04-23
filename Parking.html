@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>Parking Slot Booking System</title>
+	<style>
+		
+body{
+background-image: url('./img/Fondo_1.jpg');
+background-repeat: no-repeat;
+background-attachment: fixed;
+background-size: cover;
+
+}
+H1{
+
+	position: absolute;
+width: 295px;
+height: 23px;
+left: 140px;
+top: 68px;
+
+font-family: 'Roboto';
+font-style: normal;
+font-weight: 700;
+font-size: 20px;
+line-height: 23px;
+letter-spacing: 0.240366px;
+
+color: #FFFFFF;
+}
+		.parking-slot {
+			display: inline-block;
+			margin: 10px;
+			padding: 10px;
+			border: 1px solid white;
+			cursor: pointer;
+			background-color: green;
+		}
+
+		.booked {
+			background-color: red;
+			color: white;
+			cursor: not-allowed;
+		}
+
+		input.error {
+			border: 1px solid red;
+		}
+
+		.error-message {
+			color: red;
+			font-size: 12px;
+		}
+
+		table {
+			border-collapse: collapse;
+			margin-top: 20px;
+		}
+
+		th, td {
+			padding: 5px;
+			border: 1px solid white;
+			color: white;
+		}
+		#parkingSlotsDiv{
+			margin-left: 43vw;
+			padding: 4vw;
+			color: white;
+			display: inline-block;
+			width: 26vw;
+			height: 25vw;
+		}
+		#infosection{
+		
+			position: absolute;
+			width: 489px;
+			height: 631px;
+			left: 16px;
+			top: 17px;
+			background: rgba(230, 238, 248, 0.3);
+		}
+		#bookingForm{
+			position: absolute;
+			left: 7.04%;
+			top: 35.34%;
+			bottom: 60.75%;
+			margin-left: 5vw;
+		}
+	</style>
+</head>
+<body >
+	<div id="infosection">
+	<h1>Parking Slot Booking System</h1>
+	
+	<form id="bookingForm">
+		<input type="text" id="carIdInput" name="carIdInput" placeholder="Num. Placa"><br>
+		<span id="carIdError" class="error-message"></span><br>
+
+		<input type="text" id="personalIdInput" name="personalIdInput" placeholder="Cedula"><br>
+		<span id="personalIdError" class="error-message"></span><br>
+
+		<label for="waitTimeInput">Wait Time:</label>
+		<input type="number" id="waitHoursInput" name="waitHoursInput" min="0" max="6" value="1" style="width: 50px;"> hours
+		<input type="number" id="waitMinutesInput" name="waitMinutesInput" min="0.05" max="59" value="0" style="width: 50px;"> minutes<br>
+		<span id="waitTimeError" class="error-message"></span><br>
+
+		<input type="text" id="slotid" name="slotIdInput" placeholder="Num. Campo"><br>
+		<span id="slotIdError" class="error-message"></span><br>
+		<button type="submit" id="bookButton">Book Slot</button>
+	</form>
+</div>
+<div id="parkingSlotsDiv"></div>
+	<table>
+		<thead>
+			<tr>
+				<th>Slot Number</th>
+				<th>Car ID</th>
+				<th>Personal ID</th>
+				<th>Booked At</th>
+				<th>Expires At</th>
+			</tr>
+		</thead>
+		<tbody id="bookingTableBody"></tbody>
+	</table>
+	<script>
+		const parkingSlotsDiv = document.getElementById('parkingSlotsDiv');
+		const bookingForm = document.getElementById('bookingForm');
+		const carIdInput = document.getElementById('carIdInput');
+		const personalIdInput = document.getElementById('personalIdInput');
+		const waitHoursInput = document.getElementById('waitHoursInput');
+		const waitMinutesInput = document.getElementById('waitMinutesInput');
+		const bookButton = document.getElementById('bookButton');
+		const bookingTableBody = document.getElementById('bookingTableBody');
+		const slotIdInput = document.getElementById('slotid')
+
+		const slots = new Array(36).fill(null);
+
+		// Create parking slots
+		for (let i = 0; i < slots.length; i++) {
+			const slot = document.createElement('div');
+			slot.classList.add('parking-slot');
+			slot.innerText = i + 1;
+			slot.setAttribute('id', i+1)
+			slot.addEventListener('click', () => {
+				if (!slot.classList.contains('booked')) {
+					slot.classList.add('booked');
+
+					// Get current
+                    // time
+const now = new Date();
+				// Calculate expiry time based on wait time
+				const expiry = new Date(now.getTime() + (waitHoursInput.value * 60 * 60 * 1000) + (waitMinutesInput.value * 60 * 1000));
+
+				// Add booking data to table
+				const row = bookingTableBody.insertRow();
+				row.insertCell().innerText = i + 1;
+				row.insertCell().innerText = carIdInput.value;
+				row.insertCell().innerText = personalIdInput.value;
+				row.insertCell().innerText = now.toLocaleString();
+				row.insertCell().innerText = expiry.toLocaleString();
+
+				// Set slot to free after expiry time
+				setTimeout(() => {
+					slot.classList.remove('booked');
+					const expiryCell = row.cells[4];
+					expiryCell.innerText = expiryCell.innerText + " (expired)";
+				}, expiry - now);
+			}
+		});
+		parkingSlotsDiv.appendChild(slot);
+	}
+
+	// Validate form data on submit
+	bookingForm.addEventListener('submit', (event) => {
+		event.preventDefault();
+
+		// Reset error messages
+		document.querySelectorAll('.error-message').forEach((element) => {
+			element.innerText = '';
+		});
+
+		// Validate car ID
+		if (carIdInput.value === null) {
+			carIdInput.classList.add('error');
+			document.getElementById('carIdError').innerText = 'Car ID is required.';
+		}
+
+		// Validate personal ID
+		if (personalIdInput.value === null) {
+			personalIdInput.classList.add('error');
+			document.getElementById('personalIdError').innerText = 'Personal ID is required.';
+		}
+
+		// Validate wait time
+		if (waitHoursInput.value === '0' && waitMinutesInput.value === '0') {
+			waitHoursInput.classList.add('error');
+			waitMinutesInput.classList.add('error');
+			document.getElementById('waitTimeError').innerText = 'Wait time cannot be 0.';
+		}
+
+		// Submit form if no errors
+		if (!carIdInput.classList.contains('error') && !personalIdInput.classList.contains('error') && !waitHoursInput.classList.contains('error') && !waitMinutesInput.classList.contains('error')) {
+			
+			
+			const slot = document.getElementById(slotIdInput.value);
+			
+				if (!slot.classList.contains('booked')) {
+					slot.classList.add('booked');
+
+					// Get current
+                    // time
+const now = new Date();
+				// Calculate expiry time based on wait time
+				const expiry = new Date(now.getTime() + (waitHoursInput.value * 60 * 60 * 1000) + (waitMinutesInput.value * 60 * 1000));
+				alert("Confirmacion de reserva \nNombre: Angel  \nCedula: " +personalIdInput.value+ " \nParqueo: A1"+ "  \nNumerco de Espacio: " +slotIdInput.value+ " \nValido hasta: " +expiry.toLocaleString()+ "\nPorfavor presentar este ticket al ingreso del parqueo");
+				// Add booking data to table
+				const row = bookingTableBody.insertRow();
+				row.insertCell().innerText = slotIdInput.value;
+				row.insertCell().innerText = carIdInput.value;
+				row.insertCell().innerText = personalIdInput.value;
+				row.insertCell().innerText = now.toLocaleString();
+				row.insertCell().innerText = expiry.toLocaleString();
+
+				// Set slot to free after expiry time
+				setTimeout(() => {
+					slot.classList.remove('booked');
+					const expiryCell = row.cells[4];
+					expiryCell.innerText = expiryCell.innerText + " (expired)";
+				}, expiry - now);
+			}
+		
+		}
+	});
+ 
+    
+</script>
+</body>
+</html>
